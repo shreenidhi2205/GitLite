@@ -95,27 +95,144 @@ function EmptyState({ icon, title, subtitle }) {
     </div>
   );
 }
+function CommitFilePanel({ commit }) {
+  const [blob,    setBlob]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(false);
 
-function CommitTimeline({ commits, loading }) {
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    fetch(`${API}/blobs/${commit.blobHash}`)
+      .then(r => r.json())
+      .then(d => setBlob(d))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [commit.blobHash]);
+
+  function handleDownload() {
+    const fileBlob = new Blob([blob.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(fileBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${commit.hash.slice(0,7)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div onClick={e => e.stopPropagation()}
+      style={{margin:'0 24px 12px 50px',background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden',animation:'slideIn .2s ease'}}>
+      <div style={{padding:'10px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:14}}>📄</span>
+          <span style={{fontSize:12,color:C.muted,fontFamily:'Space Mono,monospace'}}>blob: {commit.blobHash?.slice(0,7)}</span>
+        </div>
+        {blob && <Btn variant="primary" style={{fontSize:11,padding:'4px 12px'}} onClick={handleDownload}>⬇ Download</Btn>}
+      </div>
+
+      {loading && <div style={{padding:20,textAlign:'center',color:C.muted,fontSize:12}}>Loading...</div>}
+      {error   && <div style={{padding:20,textAlign:'center',color:C.red,fontSize:12}}>Failed to load blob</div>}
+      {blob && (
+        <pre style={{
+          margin:0, padding:16,
+          fontSize:12, lineHeight:1.6,
+          color:C.text, fontFamily:'Space Mono,monospace',
+          overflowX:'auto', maxHeight:300, overflowY:'auto',
+          whiteSpace:'pre-wrap', wordBreak:'break-all',
+        }}>
+          {blob.content}
+        </pre>
+      )}
+    </div>
+  );
+}
+function CommitFilePanel({ commit }) {
+  const [blob,    setBlob]    = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    fetch(`${API}/blobs/${commit.blobHash}`)
+      .then(r => r.json())
+      .then(d => setBlob(d))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [commit.blobHash]);
+
+  function handleDownload() {
+    const fileBlob = new Blob([blob.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(fileBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${commit.hash.slice(0,7)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return (
+    <div onClick={e => e.stopPropagation()}
+      style={{margin:'0 24px 12px 50px',background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden',animation:'slideIn .2s ease'}}>
+      <div style={{padding:'10px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:14}}>📄</span>
+          <span style={{fontSize:12,color:C.muted,fontFamily:'Space Mono,monospace'}}>blob: {commit.blobHash?.slice(0,7)}</span>
+        </div>
+        {blob && <Btn variant="primary" style={{fontSize:11,padding:'4px 12px'}} onClick={handleDownload}>⬇ Download</Btn>}
+      </div>
+
+      {loading && <div style={{padding:20,textAlign:'center',color:C.muted,fontSize:12}}>Loading...</div>}
+      {error   && <div style={{padding:20,textAlign:'center',color:C.red,fontSize:12}}>Failed to load blob</div>}
+      {blob && (
+        <pre style={{
+          margin:0, padding:16,
+          fontSize:12, lineHeight:1.6,
+          color:C.text, fontFamily:'Space Mono,monospace',
+          overflowX:'auto', maxHeight:300, overflowY:'auto',
+          whiteSpace:'pre-wrap', wordBreak:'break-all',
+        }}>
+          {blob.content}
+        </pre>
+      )}
+    </div>
+  );
+}
+function CommitTimeline({ commits, loading, onCommitClick }) {
   if (loading) return <div style={{padding:28,textAlign:'center',color:C.muted,fontSize:13}}>Loading...</div>;
   if (!commits.length) return <EmptyState icon="◌" title="No commits yet" subtitle="Make the first commit on this branch" />;
   return (
     <div style={{padding:'8px 0'}}>
       {commits.map((c, i) => c && (
-        <div key={c.hash||i} style={{display:'flex',gap:16,padding:'14px 24px',borderBottom:`1px solid ${C.border}`,animation:`slideIn .2s ease ${i*0.04}s both`}}>
-          <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-            <div style={{width:10,height:10,borderRadius:'50%',background:C.green,border:`2px solid ${C.greenDim}`,flexShrink:0,marginTop:4}} />
-            {i < commits.length-1 && <div style={{width:1,flex:1,background:C.border,marginTop:4,minHeight:16}} />}
-          </div>
-          <div style={{flex:1,paddingBottom:4}}>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4,flexWrap:'wrap'}}>
-              <span style={{fontFamily:'Space Mono,monospace',fontSize:12,color:C.accent,background:C.accent+'12',border:`1px solid ${C.accent}33`,borderRadius:5,padding:'2px 7px'}}>
-                {c.hash?.slice(0,7)||'???????'}
-              </span>
-              <span style={{fontSize:13,color:C.text,fontWeight:500}}>{c.message}</span>
+        <div key={c.hash||i}>
+          <div
+            onClick={() => onCommitClick(c)}
+            style={{display:'flex',gap:16,padding:'14px 24px',borderBottom:`1px solid ${C.border}`,
+              animation:`slideIn .2s ease ${i*0.04}s both`, cursor:'pointer', transition:'background .15s'}}
+            onMouseEnter={e => e.currentTarget.style.background = C.surface2}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+              <div style={{width:10,height:10,borderRadius:'50%',background:C.green,border:`2px solid ${C.greenDim}`,flexShrink:0,marginTop:4}} />
+              {i < commits.length-1 && <div style={{width:1,flex:1,background:C.border,marginTop:4,minHeight:16}} />}
             </div>
-            {c.time && <div style={{fontSize:11,color:C.muted}}>{new Date(c.time).toLocaleString()}</div>}
+            <div style={{flex:1,paddingBottom:4}}>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:4,flexWrap:'wrap'}}>
+                <span style={{fontFamily:'Space Mono,monospace',fontSize:12,color:C.accent,background:C.accent+'12',border:`1px solid ${C.accent}33`,borderRadius:5,padding:'2px 7px'}}>
+                  {c.hash?.slice(0,7)||'???????'}
+                </span>
+                <span style={{fontSize:13,color:C.text,fontWeight:500}}>{c.message}</span>
+                <span style={{marginLeft:'auto',fontSize:11,color:C.muted}}>click to view file ↓</span>
+              </div>
+              {c.time && <div style={{fontSize:11,color:C.muted}}>{new Date(c.time).toLocaleString()}</div>}
+            </div>
           </div>
+
+          {/* Inline file panel — rendered right below the clicked commit */}
+          {c._expanded && (
+            <CommitFilePanel commit={c} />
+          )}
         </div>
       ))}
     </div>
@@ -221,6 +338,11 @@ function RepoDetailView({
   const [repoNameEdit,  setRepoNameEdit]  = useState('');
   const [showNewBranch, setShowNewBranch] = useState(false);
   const [newBranchName, setNewBranchName] = useState('');
+  const [expandedHash, setExpandedHash] = useState(null);
+
+  function handleCommitClick(commit) {
+    setExpandedHash(prev => prev === commit.hash ? null : commit.hash);
+  }
 
   function saveRename() {
     if (!repoNameEdit.trim()) return notify('Name cannot be empty', 'error');
@@ -333,7 +455,11 @@ function RepoDetailView({
                       + Commit here
                     </Btn>
                   </div>
-                  <CommitTimeline commits={history} loading={histLoading} />
+                  <CommitTimeline
+                    commits={history.map(c => ({ ...c, _expanded: c.hash === expandedHash }))}
+                    loading={histLoading}
+                    onCommitClick={handleCommitClick}
+                  />
                 </div>
               )}
             </div>
