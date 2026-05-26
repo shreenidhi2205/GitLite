@@ -95,58 +95,7 @@ function EmptyState({ icon, title, subtitle }) {
     </div>
   );
 }
-function CommitFilePanel({ commit }) {
-  const [blob,    setBlob]    = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    setError(false);
-    fetch(`${API}/blobs/${commit.blobHash}`)
-      .then(r => r.json())
-      .then(d => setBlob(d))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [commit.blobHash]);
-
-  function handleDownload() {
-    const fileBlob = new Blob([blob.content], { type: 'text/plain' });
-    const url = URL.createObjectURL(fileBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${commit.hash.slice(0,7)}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  return (
-    <div onClick={e => e.stopPropagation()}
-      style={{margin:'0 24px 12px 50px',background:C.bg,border:`1px solid ${C.border}`,borderRadius:10,overflow:'hidden',animation:'slideIn .2s ease'}}>
-      <div style={{padding:'10px 16px',borderBottom:`1px solid ${C.border}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <span style={{fontSize:14}}>📄</span>
-          <span style={{fontSize:12,color:C.muted,fontFamily:'Space Mono,monospace'}}>blob: {commit.blobHash?.slice(0,7)}</span>
-        </div>
-        {blob && <Btn variant="primary" style={{fontSize:11,padding:'4px 12px'}} onClick={handleDownload}>⬇ Download</Btn>}
-      </div>
-
-      {loading && <div style={{padding:20,textAlign:'center',color:C.muted,fontSize:12}}>Loading...</div>}
-      {error   && <div style={{padding:20,textAlign:'center',color:C.red,fontSize:12}}>Failed to load blob</div>}
-      {blob && (
-        <pre style={{
-          margin:0, padding:16,
-          fontSize:12, lineHeight:1.6,
-          color:C.text, fontFamily:'Space Mono,monospace',
-          overflowX:'auto', maxHeight:300, overflowY:'auto',
-          whiteSpace:'pre-wrap', wordBreak:'break-all',
-        }}>
-          {blob.content}
-        </pre>
-      )}
-    </div>
-  );
-}
 function CommitFilePanel({ commit }) {
   const [blob,    setBlob]    = useState(null);
   const [loading, setLoading] = useState(true);
